@@ -16,8 +16,10 @@ import argparse
 import csv
 import re
 import sys
+from typing import TextIO
 
 from bs4 import BeautifulSoup
+from bs4.element import Tag
 from curl_cffi import requests
 
 BASE_URL = "https://mdcomputers.in/index.php"
@@ -49,7 +51,7 @@ def fetch_search_page(search_term: str, page: int) -> str:
     return response.text
 
 
-def parse_products(html: str) -> list[dict]:
+def parse_products(html: str) -> list[dict[str, str]]:
     """Extract product rows from a search-results page."""
     soup = BeautifulSoup(html, "html.parser")
     products = []
@@ -75,7 +77,7 @@ def total_pages(html: str) -> int:
     return int(match.group(1)) if match else 1
 
 
-def scrape(search_term: str, max_pages: int) -> list[dict]:
+def scrape(search_term: str, max_pages: int) -> list[dict[str, str]]:
     """Scrape up to `max_pages` result pages for `search_term`."""
     first_page_html = fetch_search_page(search_term, page=1)
     products = parse_products(first_page_html)
@@ -85,14 +87,14 @@ def scrape(search_term: str, max_pages: int) -> list[dict]:
     return products
 
 
-def write_csv(products: list[dict], output) -> None:
+def write_csv(products: list[dict[str, str]], output: TextIO) -> None:
     """Write products as CSV to an open file handle."""
     writer = csv.DictWriter(output, fieldnames=CSV_COLUMNS)
     writer.writeheader()
     writer.writerows(products)
 
 
-def _price_text(card, selector: str) -> str:
+def _price_text(card: Tag, selector: str) -> str:
     """Return the text of a price node inside a product card, or ''."""
     node = card.select_one(f"span.price {selector}")
     if node is None:
@@ -107,7 +109,7 @@ def _parse_amount(text: str) -> str:
     return digits
 
 
-def _discount_label(card) -> str:
+def _discount_label(card: Tag) -> str:
     """Return the sale label (e.g. '-9%') shown on the card, or ''."""
     label = card.select_one("span.onsale.product-label")
     return label.get_text(strip=True) if label else ""

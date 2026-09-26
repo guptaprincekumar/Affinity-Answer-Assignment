@@ -7,13 +7,12 @@
 # Output is tab-separated: NAME <TAB> LOCATION <TAB> FOUNDING_YEAR
 set -euo pipefail
 
-if [ $# -ne 1 ]; then
+if [[ $# -ne 1 ]]; then
     echo "usage: $0 <csv-url>" >&2
     exit 1
 fi
 
 url=$1
-tab=$(printf '\t')
 
 # CSV fields (see header row): 2 = Security (company name),
 # 5 = Headquarters Location, 8 = Founded. Fields can contain quoted
@@ -23,6 +22,7 @@ curl -sSfL "$url" | awk '
     NR == 1 { next }                       # skip the header row
     {
         sub(/\r$/, "")                     # tolerate CRLF line endings
+        delete fields                      # do not carry values across ragged rows
         parse_csv_line($0, fields)
         # The Founded column can be "2013 (1888)" or "2020 (1915, ...)";
         # the first 4-digit number is the founding year of the listed entity.
@@ -58,4 +58,4 @@ curl -sSfL "$url" | awk '
         fields[++n] = value
         return n
     }
-' | sort -t "$tab" -k3,3n
+' | sort -t $'\t' -k3,3n

@@ -17,6 +17,6 @@ JOIN full_region fr ON fr.rfam_acc = f.rfam_acc
 JOIN rfamseq rf ON rf.rfamseq_acc = fr.rfamseq_acc
 WHERE fr.is_significant = 1
 GROUP BY f.rfam_acc, f.rfam_id
-HAVING MAX(rf.length) > 1000000
+HAVING max_length > 1000000
 ORDER BY max_length DESC
 LIMIT 15 OFFSET 120;
